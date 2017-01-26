@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TVConsole</string>
+    <string name="title_activity_touch_screen">Touch Screen Input</string>
+    <string name="action_settings">Settings</string>
+</resources>
