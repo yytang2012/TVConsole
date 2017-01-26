@@ -2,6 +2,7 @@ package edu.wing.yytang.tvconsole;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -11,8 +12,14 @@ import android.view.View;
  */
 
 public class TouchScreenView extends View {
-    public TouchScreenView(Context context) {
+    private String TAG = TouchScreenView.class.getName();
+    Point displaySize;
+    TouchScreenActivity activity;
+    public TouchScreenView(Context context, TouchScreenActivity activity, Point displaySize) {
         super(context);
+        this.activity = activity;
+        this.displaySize = displaySize;
+        Log.i(TAG, "display x = " + displaySize.x + ", y = " + displaySize.y);
     }
 
     @Override
@@ -22,32 +29,6 @@ public class TouchScreenView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        final String TAG = "onTouchEvent";
-        float touched_x = event.getX();
-        float touched_y = event.getY();
-        String string = "x = " + touched_x + ", y = " + touched_y + ", ";
-        int action = event.getAction();
-
-        switch(action){
-            case MotionEvent.ACTION_DOWN:
-                string = string + "DOWN";
-                break;
-            case MotionEvent.ACTION_MOVE:
-                string = string + "MOVE";
-                break;
-            case MotionEvent.ACTION_UP:
-                string = string + "UP";
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                string = string + "CANCEL";
-                break;
-            case MotionEvent.ACTION_OUTSIDE:
-                string = string + "OUTSIDE";
-                break;
-            default:
-        }
-
-        Log.i(TAG, string);
-        return true;
+        return this.activity.onTouchEvent(event);
     }
 }

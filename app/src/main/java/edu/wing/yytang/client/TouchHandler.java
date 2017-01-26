@@ -21,13 +21,14 @@ public class TouchHandler implements Constants {
     private PerformanceAdapter spi;
     private Point displaySize;
 
-    private float xScaleFactor, yScaleFactor = 0;
+    private float xScaleFactor, yScaleFactor = 1;
     private boolean gotScreenInfo = false;
 
     public TouchHandler(TouchScreenActivity activity, Point displaySize, PerformanceAdapter spi) {
         this.activity = activity;
         this.displaySize = displaySize;
         this.spi = spi;
+        gotScreenInfo = true;
     }
 
     public void sendScreenInfoMessage() {
