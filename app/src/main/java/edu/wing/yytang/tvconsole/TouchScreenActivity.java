@@ -33,7 +33,7 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     private Socket mSocket = null;
     private TouchHandler touchHandler;
     private PerformanceAdapter spi;
-    private BufferedInputStream in = null;
+    private InputStream in = null;
     private BufferedOutputStream out = null;
     private Handler mHandler;
 
@@ -74,13 +74,69 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
             public void run() {
                 try {
                     mSocket = new Socket(ipAddr, PROXY_PORT);
-                    in = new BufferedInputStream(mSocket.getInputStream());
+                    in = mSocket.getInputStream();
                     out = new BufferedOutputStream(mSocket.getOutputStream());
+                    onOpen();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    public void onOpen() {
+        onServerResponse();
+        touchHandler.sendScreenInfoMessage();
+    }
+
+    private void onServerResponse () {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(true) {
+                    try {
+                        SVMPProtocol.Response data = SVMPProtocol.Response.parseDelimitedFrom(in);
+                        Log.d(TAG, "Received incoming message object of type " + data.getType().name());
+                        onResponseRUNNING(data);
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error on socket: " + e.getMessage());
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            in.close();
+                            out.close();
+                            mSocket.close();
+                        } catch (Exception e) {
+                            // Don't care
+                        } finally {
+                            in = null;
+                            out = null;
+                        }
+                        Log.d(TAG, "Client connection handler finished.");
+                    }
+                }
+            }
+        }).start();
+    }
+
+    private void onResponseRUNNING(final SVMPProtocol.Response data) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                onMessage(data);
+            }
+        });
+    }
+
+    public boolean onMessage(SVMPProtocol.Response data) {
+        switch (data.getType()) {
+            case SCREENINFO:
+                handleScreenInfo(data);
+                break;
+            default:
+                // any messages we don't understand, pass to our parent for processing
+        }
+        return true;
+
     }
 
     public void sendMessage(SVMPProtocol.Request msg) {
@@ -108,5 +164,12 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
 
     public boolean isConnected() {
         return mSocket != null && mSocket.isConnected() && !mSocket.isClosed();
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // Bridge input callbacks to the Touch Input Handler
+    /////////////////////////////////////////////////////////////////////
+    private void handleScreenInfo(SVMPProtocol.Response msg) {
+        touchHandler.handleScreenInfoResponse(msg);
     }
 }

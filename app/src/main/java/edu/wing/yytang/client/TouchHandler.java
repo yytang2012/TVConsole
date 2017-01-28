@@ -28,7 +28,9 @@ public class TouchHandler implements Constants {
         this.activity = activity;
         this.displaySize = displaySize;
         this.spi = spi;
-        gotScreenInfo = true;
+//        gotScreenInfo = true;
+//        xScaleFactor = (float)1024/(float)1080;
+//        yScaleFactor = (float)768/(float)1776;
     }
 
     public void sendScreenInfoMessage() {
