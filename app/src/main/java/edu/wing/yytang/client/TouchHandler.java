@@ -23,6 +23,8 @@ public class TouchHandler implements Constants {
 
     private float xScaleFactor, yScaleFactor = 1;
     private boolean gotScreenInfo = false;
+    private boolean batching = false;
+    private SVMPProtocol.Request.Builder msg = null;
 
     public TouchHandler(TouchScreenActivity activity, Point displaySize, PerformanceAdapter spi) {
         this.activity = activity;
@@ -65,7 +67,17 @@ public class TouchHandler implements Constants {
         spi.incrementTouchUpdates();
 
         // Create Protobuf message builders
-        SVMPProtocol.Request.Builder msg = SVMPProtocol.Request.newBuilder();
+//        SVMPProtocol.Request.Builder msg = SVMPProtocol.Request.newBuilder();
+
+        if(batching) {
+            if(event.getAction() != MotionEvent.ACTION_MOVE) {
+                activity.sendMessage(msg.build());
+                batching = false;
+            }
+        }
+        if(!batching) {
+            msg = SVMPProtocol.Request.newBuilder();
+        }
         SVMPProtocol.TouchEvent.Builder eventmsg = SVMPProtocol.TouchEvent.newBuilder();
         SVMPProtocol.TouchEvent.PointerCoords.Builder p = SVMPProtocol.TouchEvent.PointerCoords.newBuilder();
         SVMPProtocol.TouchEvent.HistoricalEvent.Builder h = SVMPProtocol.TouchEvent.HistoricalEvent.newBuilder();
@@ -73,7 +85,8 @@ public class TouchHandler implements Constants {
         // Set general touch event information
         eventmsg.setAction(event.getAction());
         eventmsg.setDownTime(event.getDownTime());
-        eventmsg.setEventTime(event.getEventTime());
+        if(event.getAction() != MotionEvent.ACTION_MOVE)
+            eventmsg.setEventTime(event.getEventTime());
         eventmsg.setEdgeFlags(event.getEdgeFlags());
 
         // Loop and set pointer/coordinate information
@@ -108,7 +121,13 @@ public class TouchHandler implements Constants {
         msg.addTouch(eventmsg); // TODO: batch touch events
 
         // Send touch event to VM
-        activity.sendMessage(msg.build());
+        if(event.getAction() != MotionEvent.ACTION_MOVE || msg.getTouchList().size() > 8) {
+            activity.sendMessage(msg.build());
+            batching = false;
+        }
+        else {
+            batching = true;
+        }
 
         return true;
     }

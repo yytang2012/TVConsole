@@ -3,16 +3,10 @@ package edu.wing.yytang.tvconsole;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
-import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,7 +30,6 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     private PerformanceAdapter spi;
     private InputStream in = null;
     private OutputStream out = null;
-    private Handler mHandler;
 
 
     @Override
