@@ -15,6 +15,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 import edu.wing.yytang.client.TouchHandler;
@@ -34,8 +35,9 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     private TouchHandler touchHandler;
     private PerformanceAdapter spi;
     private InputStream in = null;
-    private BufferedOutputStream out = null;
+    private OutputStream out = null;
     private Handler mHandler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,25 +47,9 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
         getWindowManager().getDefaultDisplay().getSize(displaySize);
         touchHandler = new TouchHandler(TouchScreenActivity.this, displaySize, spi);
         TouchScreenView tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
-        connectServer();
-        mHandler = new Handler() {
-            @Override
-            public void handleMessage(Message message) {
-//                InputStream stream = ByteArrayOutputStream.
-//                ByteArrayInputStream stream = new ByteArrayInputStream(message.obj);
-//                msg.writeDelimitedTo(stream);
-//                SVMPProtocol.Request msg = SVMPProtocol.Request.parseDelimitedFrom(message.obj)
-                Log.i(TAG, "msg = " + message.obj);
-                if(out != null) {
-                    try {
-                        out.write((byte[]) message.obj);
-                        out.flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
+        if(proxying == false) {
+            connectServer();
+        }
 
         setContentView(tsView);
     }
@@ -75,7 +61,7 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
                 try {
                     mSocket = new Socket(ipAddr, PROXY_PORT);
                     in = mSocket.getInputStream();
-                    out = new BufferedOutputStream(mSocket.getOutputStream());
+                    out = mSocket.getOutputStream();
                     onOpen();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -85,6 +71,7 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     }
 
     public void onOpen() {
+        proxying = true;
         onServerResponse();
         touchHandler.sendScreenInfoMessage();
     }
@@ -93,27 +80,27 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
         new Thread(new Runnable() {
             @Override
             public void run() {
-                while(true) {
-                    try {
+                try {
+                    while(true) {
                         SVMPProtocol.Response data = SVMPProtocol.Response.parseDelimitedFrom(in);
                         Log.d(TAG, "Received incoming message object of type " + data.getType().name());
                         onResponseRUNNING(data);
-                    } catch (IOException e) {
-                        Log.e(TAG, "Error on socket: " + e.getMessage());
-                        e.printStackTrace();
-                    } finally {
-                        try {
-                            in.close();
-                            out.close();
-                            mSocket.close();
-                        } catch (Exception e) {
-                            // Don't care
-                        } finally {
-                            in = null;
-                            out = null;
-                        }
-                        Log.d(TAG, "Client connection handler finished.");
                     }
+                } catch (IOException e) {
+                    Log.e(TAG, "Error on socket: " + e.getMessage());
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        in.close();
+                        out.close();
+                        mSocket.close();
+                    } catch (Exception e) {
+                        // Don't care
+                    } finally {
+                        in = null;
+                        out = null;
+                    }
+                    Log.d(TAG, "Client connection handler finished.");
                 }
             }
         }).start();
@@ -144,12 +131,7 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
             //webSocket.sendBinaryMessage(msg.toByteArray());
             // VM is expecting a message delimiter (varint prefix) so write a delimited message instead
             try {
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                msg.writeDelimitedTo(stream);
-                Message message = mHandler.obtainMessage();
-                message.obj = stream.toByteArray();
-                mHandler.sendMessage(message);
-//                webSocket.sendBinaryMessage(stream.toByteArray());
+                msg.writeDelimitedTo(out);
 
             } catch (IOException e) {
                 Log.e(TAG, "Error writing delimited byte output:", e);
