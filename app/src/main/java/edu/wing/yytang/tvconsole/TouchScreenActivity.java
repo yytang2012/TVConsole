@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import edu.wing.yytang.client.RotationHandler;
 import edu.wing.yytang.client.TouchHandler;
 import edu.wing.yytang.common.Constants;
 import edu.wing.yytang.performance.PerformanceAdapter;
@@ -27,24 +28,28 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     private boolean proxying = false;
     private Socket mSocket = null;
     private TouchHandler touchHandler;
+    private RotationHandler rotationHandler;
     private PerformanceAdapter spi;
     private InputStream in = null;
     private OutputStream out = null;
+    private TouchScreenView tsView = null;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        spi = new PerformanceAdapter();
-        Point displaySize = new Point();
-        getWindowManager().getDefaultDisplay().getSize(displaySize);
-        touchHandler = new TouchHandler(TouchScreenActivity.this, displaySize, spi);
-        TouchScreenView tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
-        if(proxying == false) {
+        if(!proxying) {
+            Point displaySize = new Point();
+            getWindowManager().getDefaultDisplay().getSize(displaySize);
+            touchHandler = new TouchHandler(TouchScreenActivity.this, displaySize, spi);
+            rotationHandler = new RotationHandler(TouchScreenActivity.this);
+            rotationHandler.initRotationUpdates();
+            tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
+            spi = new PerformanceAdapter();
             connectServer();
         }
-
-        setContentView(tsView);
+        if(tsView != null)
+            setContentView(tsView);
     }
 
     public void connectServer() {
@@ -66,7 +71,13 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     public void onOpen() {
         proxying = true;
         onServerResponse();
+
         touchHandler.sendScreenInfoMessage();
+    }
+
+    protected void onClose() {
+        if (rotationHandler != null)
+            rotationHandler.cleanupRotationUpdates();
     }
 
     private void onServerResponse () {
