@@ -7,5 +7,5 @@ package edu.wing.yytang.common;
 public interface Constants {
     int PROXY_PORT = 8001;
 //    public static final String ipAddr = "100.75.255.199";
-    String ipAddr = "192.168.0.101";
+    String ipAddr = "192.168.1.8";
 }

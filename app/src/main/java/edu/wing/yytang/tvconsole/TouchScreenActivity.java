@@ -38,18 +38,17 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(!proxying) {
-            Point displaySize = new Point();
-            getWindowManager().getDefaultDisplay().getSize(displaySize);
-            touchHandler = new TouchHandler(TouchScreenActivity.this, displaySize, spi);
-            rotationHandler = new RotationHandler(TouchScreenActivity.this);
-            rotationHandler.initRotationUpdates();
-            tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
-            spi = new PerformanceAdapter();
-            connectServer();
-        }
-        if(tsView != null)
-            setContentView(tsView);
+
+        spi = new PerformanceAdapter();
+        Point displaySize = new Point();
+        getWindowManager().getDefaultDisplay().getSize(displaySize);
+        touchHandler = new TouchHandler(TouchScreenActivity.this, displaySize, spi);
+        rotationHandler = new RotationHandler(TouchScreenActivity.this);
+        rotationHandler.initRotationUpdates();
+        tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
+        connectServer();
+
+        setContentView(tsView);
     }
 
     public void connectServer() {
