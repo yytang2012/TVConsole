@@ -1,5 +1,9 @@
 package edu.wing.yytang.common;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 import edu.wing.yytang.protocol.SVMPProtocol;
 
 /**
@@ -21,5 +25,36 @@ public class Utility {
 
         // build the Request
         return rBuilder.build();
+    }
+
+    public static String getPrefString(Context context, int keyId, int defaultValueId) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String key = context.getString(keyId);
+        String defaultValue = context.getString(defaultValueId);
+
+        return sharedPreferences.getString(key, defaultValue);
+    }
+
+    public static int getPrefInt(Context context, int keyId, int defaultValueId) {
+        String prefString = getPrefString(context, keyId, defaultValueId);
+
+        int value = 0;
+        try {
+            value = Integer.parseInt(prefString);
+        } catch( Exception e ) { /* don't care */ }
+
+        return value;
+    }
+
+    public static boolean getPrefBool(Context context, int keyId, int defaultValueId) {
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String key = context.getString(keyId);
+        boolean defaultValue = false;
+        try {
+            defaultValue = Boolean.parseBoolean(context.getString(defaultValueId));
+        } catch( Exception e ) { /* don't care */ }
+
+        return sharedPreferences.getBoolean(key, defaultValue);
     }
 }
