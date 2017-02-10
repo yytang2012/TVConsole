@@ -24,6 +24,9 @@
         android:screenOrientation="portrait">
 
         </activity>
+
+        <!-- Background service -->
+        <service android:name="edu.wing.yytang.services.SessionService"/>
     </application>
 
 </manifest>

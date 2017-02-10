@@ -1,38 +1,42 @@
 package edu.wing.yytang.tvconsole;
 
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-
+import edu.wing.yytang.apprtc.AppRTCClient;
 import edu.wing.yytang.client.RotationHandler;
 import edu.wing.yytang.client.TouchHandler;
 import edu.wing.yytang.common.Constants;
+import edu.wing.yytang.common.StateMachine;
+import edu.wing.yytang.common.StateObserver;
 import edu.wing.yytang.performance.PerformanceAdapter;
 import edu.wing.yytang.protocol.SVMPProtocol;
+import edu.wing.yytang.services.SessionService;
 
 /**
  * Created by yytang on 1/25/17.
  */
 
-public final class TouchScreenActivity extends AppCompatActivity implements Constants{
+public final class TouchScreenActivity extends AppCompatActivity implements StateObserver, Constants{
 
     private final String TAG = TouchScreenActivity.class.getName();
+    protected AppRTCClient appRtcClient;
+    private boolean bound = false;
+
     private boolean proxying = false;
-    private Socket mSocket = null;
     private TouchHandler touchHandler;
     private RotationHandler rotationHandler;
     private PerformanceAdapter spi;
-    private InputStream in = null;
-    private OutputStream out = null;
     private TouchScreenView tsView = null;
+    private Toast logToast;
 
 
     @Override
@@ -46,32 +50,37 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
         rotationHandler = new RotationHandler(TouchScreenActivity.this);
         rotationHandler.initRotationUpdates();
         tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
-        connectServer();
 
         setContentView(tsView);
+        connectToRoom();
     }
 
-    public void connectServer() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    mSocket = new Socket(ipAddr, PROXY_PORT);
-                    in = mSocket.getInputStream();
-                    out = mSocket.getOutputStream();
-                    onOpen();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+    public void connectToRoom() {
+        logAndToast(R.string.appRTC_toast_connection_start);
+
+        bindService(new Intent(this, SessionService.class), serviceConnection, 0);
     }
+
+    /** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder iBinder) {
+            // We've bound to SessionService, cast the IBinder and get SessionService instance
+            appRtcClient = (AppRTCClient) iBinder;
+            bound = true;
+
+            // after we have bound to the service, begin the connection
+            appRtcClient.connectToRoom(TouchScreenActivity.this);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+        }
+    };
 
     public void onOpen() {
-        proxying = true;
-        onServerResponse();
-
         touchHandler.sendScreenInfoMessage();
+        proxying = true;
     }
 
     protected void onClose() {
@@ -79,43 +88,6 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
             rotationHandler.cleanupRotationUpdates();
     }
 
-    private void onServerResponse () {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    while(true) {
-                        SVMPProtocol.Response data = SVMPProtocol.Response.parseDelimitedFrom(in);
-                        Log.d(TAG, "Received incoming message object of type " + data.getType().name());
-                        onResponseRUNNING(data);
-                    }
-                } catch (IOException e) {
-                    Log.e(TAG, "Error on socket: " + e.getMessage());
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        in.close();
-                        out.close();
-                        mSocket.close();
-                    } catch (Exception e) {
-                        // Don't care
-                    } finally {
-                        in = null;
-                        out = null;
-                    }
-                    Log.d(TAG, "Client connection handler finished.");
-                }
-            }
-        }).start();
-    }
-
-    private void onResponseRUNNING(final SVMPProtocol.Response data) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                onMessage(data);
-            }
-        });
-    }
 
     public boolean onMessage(SVMPProtocol.Response data) {
         switch (data.getType()) {
@@ -130,16 +102,12 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
     }
 
     public void sendMessage(SVMPProtocol.Request msg) {
-        if (isConnected()) {
-            //webSocket.sendBinaryMessage(msg.toByteArray());
-            // VM is expecting a message delimiter (varint prefix) so write a delimited message instead
-            try {
-                msg.writeDelimitedTo(out);
+        if (appRtcClient != null)
+            appRtcClient.sendMessage(msg);
+    }
 
-            } catch (IOException e) {
-                Log.e(TAG, "Error writing delimited byte output:", e);
-            }
-        }
+    public boolean isConnected() {
+        return proxying;
     }
 
     @Override
@@ -147,14 +115,30 @@ public final class TouchScreenActivity extends AppCompatActivity implements Cons
         return touchHandler.onTouchEvent(event);
     }
 
-    public boolean isConnected() {
-        return mSocket != null && mSocket.isConnected() && !mSocket.isClosed();
-    }
 
     /////////////////////////////////////////////////////////////////////
     // Bridge input callbacks to the Touch Input Handler
     /////////////////////////////////////////////////////////////////////
     private void handleScreenInfo(SVMPProtocol.Response msg) {
         touchHandler.handleScreenInfoResponse(msg);
+    }
+
+    @Override
+    public void onStateChange(StateMachine.STATE oldState, StateMachine.STATE newState, int resID) {
+
+    }
+
+    // Log |msg| and Toast about it.
+    public void logAndToast(final int resID) {
+        Log.d(TAG, getResources().getString(resID));
+        this.runOnUiThread(new Runnable() {
+            public void run() {
+                if (logToast != null) {
+                    logToast.cancel();
+                }
+                logToast = Toast.makeText(TouchScreenActivity.this, resID, Toast.LENGTH_SHORT);
+                logToast.show();
+            }
+        });
     }
 }
