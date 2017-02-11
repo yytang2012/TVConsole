@@ -20,6 +20,7 @@ public class TouchHandler implements Constants {
     private TouchScreenActivity activity;
     private PerformanceAdapter spi;
     private Point displaySize;
+    private final int batchingSize = 8;
 
     private float xScaleFactor, yScaleFactor = 1;
     private boolean gotScreenInfo = false;
@@ -121,7 +122,7 @@ public class TouchHandler implements Constants {
         msg.addTouch(eventmsg); // TODO: batch touch events
 
         // Send touch event to VM
-        if(event.getAction() != MotionEvent.ACTION_MOVE || msg.getTouchList().size() > 8) {
+        if(event.getAction() != MotionEvent.ACTION_MOVE || msg.getTouchList().size() > batchingSize) {
             activity.sendMessage(msg.build());
             batching = false;
         }

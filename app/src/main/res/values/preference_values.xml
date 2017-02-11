@@ -41,17 +41,17 @@
     <!-- Preference value defaults -->
     <string name="preferenceValue_sensors_minimumDelay">1000</string>
     <string name="preferenceValue_sensor_accelerometer">true</string>
-    <string name="preferenceValue_sensor_ambientTemperature">true</string>
-    <string name="preferenceValue_sensor_gyroscope">false</string>
+    <string name="preferenceValue_sensor_ambientTemperature">false</string>
+    <string name="preferenceValue_sensor_gyroscope">true</string>
     <string name="preferenceValue_sensor_light">true</string>
     <string name="preferenceValue_sensor_magneticField">true</string>
-    <string name="preferenceValue_sensor_pressure">true</string>
-    <string name="preferenceValue_sensor_proximity">true</string>
-    <string name="preferenceValue_sensor_relativeHumidity">true</string>
-    <string name="preferenceValue_sensor_temperature">true</string>
-    <string name="preferenceValue_sensor_gravity">false</string>
+    <string name="preferenceValue_sensor_pressure">false</string>
+    <string name="preferenceValue_sensor_proximity">false</string>
+    <string name="preferenceValue_sensor_relativeHumidity">false</string>
+    <string name="preferenceValue_sensor_temperature">false</string>
+    <string name="preferenceValue_sensor_gravity">true</string>
     <string name="preferenceValue_sensor_linearAcceleration">false</string>
-    <string name="preferenceValue_sensor_orientation">false</string>
+    <string name="preferenceValue_sensor_orientation">true</string>
     <string name="preferenceValue_sensor_rotationVector">false</string>
     <string name="preferenceValue_performance_takeMeasurements">false</string>
     <string name="preferenceValue_performance_measureInterval">1000</string>

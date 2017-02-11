@@ -49,8 +49,8 @@ public class SensorHandler implements SensorEventListener, Constants {
 
         // get preferences to determine which sensors we should listen to
         // loop through preferences...
-//        for( int i = 0; i < PREFERENCES_SENSORS_KEYS.length; i++ ) {
-        for( int i = 0; i < 2; i++ ) {
+        for( int i = 0; i < PREFERENCES_SENSORS_KEYS.length; i++ ) {
+//        for( int i = 0; i < 2; i++ ) {
             // if this sensor is enabled in the preferences, register a listener for it
             if( Utility.getPrefBool(service, PREFERENCES_SENSORS_KEYS[i], PREFERENCES_SENSORS_DEFAULTVALUES[i]) )
                 initSensor(i+1); // sensors start at 1, not 0

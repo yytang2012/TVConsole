@@ -7,9 +7,9 @@ import edu.wing.yytang.tvconsole.R;
  */
 
 public interface Constants {
-    int PROXY_PORT = 8002;
-//    String ipAddr = "100.75.255.28";
-    String ipAddr = "192.168.1.18";
+    int PROXY_PORT = 8001;
+    String ipAddr = "100.75.255.28";
+//    String ipAddr = "192.168.1.18";
 
     public static final String ACTION_REFRESH = "edu.wing.yytang.ACTION_REFRESH"; // causes SvmpActivity to refresh its layout
     public static final String ACTION_STOP_SERVICE = "edu.wing.yytang.ACTION_STOP_SERVICE"; // causes
