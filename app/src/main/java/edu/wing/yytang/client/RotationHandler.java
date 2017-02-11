@@ -21,7 +21,7 @@ public class RotationHandler extends OrientationEventListener {
     // the current rotation has a wider allowance of degrees before triggering a rotation change event
     private static final int ANGLE_ALLOWANCE = 130;
     // the number of milliseconds we wait before triggering a rotation change event
-    private static final int TIME_ALLOWANCE = 1200;
+    private static final int TIME_ALLOWANCE = 500;
 
     private TouchScreenActivity activity;
     private boolean running = false;
