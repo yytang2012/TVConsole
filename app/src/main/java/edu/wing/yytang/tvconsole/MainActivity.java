@@ -3,16 +3,19 @@ package edu.wing.yytang.tvconsole;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
+import edu.wing.yytang.common.Constants;
 import edu.wing.yytang.common.StateMachine;
 import edu.wing.yytang.services.SessionService;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MainActivity extends AppCompatActivity implements Constants{
+    private final static String TAG = MainActivity.class.getName();
     MainActivity mActivity;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +37,10 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(new Intent(MainActivity.this, TouchScreenActivity.class));
                     break;
                 case R.id.exit:
-                    stopService(new Intent(MainActivity.this, TouchScreenActivity.class));
+                    stopConnection();
+                    break;
+                default:
+                    break;
             }
         }
     };
@@ -44,6 +50,20 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, SessionService.class).putExtra("connectionID", 0);
             startService(intent);
         }
+    }
+
+    private void stopConnection() {// Broadcast the custom intent
+        Intent intent = new Intent();
+        intent.setAction(ACTION_STOP_SERVICE);
+        sendBroadcast(intent);
+        stopService(new Intent(MainActivity.this, SessionService.class));
+
+    }
+    @Override
+    public void onDestroy() {
+        Log.i(TAG, "onDestroy");
+
+        super.onDestroy();
     }
 
 }

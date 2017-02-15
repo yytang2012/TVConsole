@@ -156,4 +156,5 @@
     <string name="contextMenu_appList_removeFavorite">Remove from favorites</string>
     <string name="contextMenu_appList_createShortcut">Create shortcut</string>
     <string name="contextMenu_appList_removeShortcut">Remove shortcuts</string>
+
 </resources>

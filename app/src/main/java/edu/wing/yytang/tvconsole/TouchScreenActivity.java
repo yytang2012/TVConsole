@@ -1,6 +1,8 @@
 package edu.wing.yytang.tvconsole;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Point;
@@ -17,6 +19,7 @@ import edu.wing.yytang.client.TouchHandler;
 import edu.wing.yytang.common.Constants;
 import edu.wing.yytang.common.StateMachine;
 import edu.wing.yytang.common.StateObserver;
+import edu.wing.yytang.common.Utility;
 import edu.wing.yytang.performance.PerformanceAdapter;
 import edu.wing.yytang.protocol.SVMPProtocol;
 import edu.wing.yytang.services.SessionService;
@@ -37,6 +40,7 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
     private PerformanceAdapter spi;
     private TouchScreenView tsView = null;
     private Toast logToast;
+    private BroadcastReceiver receiver;
 
 
     @Override
@@ -50,6 +54,16 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
         rotationHandler = new RotationHandler(TouchScreenActivity.this);
         rotationHandler.initRotationUpdates();
         tsView = new TouchScreenView(this, TouchScreenActivity.this, displaySize);
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.i(TAG, "Receive a broadcast");
+                if(ACTION_STOP_SERVICE.equals(intent.getAction())) {
+                    onClose();
+                    finish();
+                }
+            }
+        };
 
         setContentView(tsView);
         connectToRoom();
@@ -86,6 +100,9 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
     protected void onClose() {
         if (rotationHandler != null)
             rotationHandler.cleanupRotationUpdates();
+
+        // unregister a broadcastReceiver
+        unregisterReceiver(receiver);
     }
 
 
@@ -140,5 +157,32 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
                 logToast.show();
             }
         });
+    }
+
+    @Override
+    public void onPause() {
+        Log.i(TAG, "onPause");
+        super.onPause();
+        if (proxying)
+            disconnectAndExit();
+    }
+
+    // Disconnect from remote resources, dispose of local resources, and exit.
+    protected void disconnectAndExit() {
+        proxying = false;
+        unbindService(serviceConnection);
+        // if the useBackground preference is unchecked, stop the session service before finishing
+//        boolean useBackground = Utility.getPrefBool(this, R.string.preferenceKey_connection_useBackground, R.string.preferenceValue_connection_useBackground);
+//        if (!useBackground)
+//            stopService(new Intent(this, SessionService.class));
+
+        if (!isFinishing())
+            finish();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.i(TAG, "Ready to destroy this activity");
+        super.onDestroy();
     }
 }

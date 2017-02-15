@@ -56,7 +56,7 @@
     <string name="preferenceValue_performance_takeMeasurements">false</string>
     <string name="preferenceValue_performance_measureInterval">1000</string>
     <string name="preferenceValue_performance_pingInterval">5000</string>
-    <string name="preferenceValue_connection_useBackground">true</string>
+    <string name="preferenceValue_connection_useBackground">false</string>
     <string name="preferenceValue_connection_useMTM">true</string>
     <string name="preferenceValue_connection_showEncryption">true</string>
     <string name="preferenceValue_connection_useDesktopMode">true</string>

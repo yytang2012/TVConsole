@@ -15,12 +15,14 @@ public class TouchScreenView extends View {
     private String TAG = TouchScreenView.class.getName();
     Point displaySize;
     TouchScreenActivity activity;
+
     public TouchScreenView(Context context, TouchScreenActivity activity, Point displaySize) {
         super(context);
         this.activity = activity;
         this.displaySize = displaySize;
         Log.i(TAG, "display x = " + displaySize.x + ", y = " + displaySize.y);
     }
+
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -31,4 +33,5 @@ public class TouchScreenView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         return this.activity.onTouchEvent(event);
     }
+
 }
