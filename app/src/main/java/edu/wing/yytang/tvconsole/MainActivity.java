@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -30,7 +31,9 @@ import edu.wing.yytang.services.SessionService;
 
 public class MainActivity extends AppCompatActivity implements Constants{
     private final static String TAG = MainActivity.class.getName();
+    private static final int REMOVE_FAVORITE_INDEX = 0;
     private MainActivity mActivity;
+
     private ImageButton connectButton;
     private ImageButton addFavoriteButton;
     private EditText hostEditText;
@@ -74,24 +77,16 @@ public class MainActivity extends AppCompatActivity implements Constants{
         hostListView.setOnItemClickListener(hostListClickListener);
         registerForContextMenu(hostListView);
 
-        connectButton.setOnClickListener(mOnClickListener);
+        connectButton.setOnClickListener(connectListener);
         addFavoriteButton.setOnClickListener(addFavoriteListener);
     }
 
-    public View.OnClickListener mOnClickListener = new OnClickListener() {
+    public View.OnClickListener connectListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            startDaemonService();
-            switch(v.getId()) {
-                case R.id.connect_button:
-                    startActivity(new Intent(MainActivity.this, TouchScreenActivity.class));
-                    break;
-//                case R.id.exit:
-//                    stopConnection();
-//                    break;
-                default:
-                    break;
-            }
+            String hostID = hostEditText.getText().toString();
+            Log.i(TAG, "Connecting to: " + hostID);
+            connectToHost(hostID);
         }
     };
 
@@ -99,38 +94,33 @@ public class MainActivity extends AppCompatActivity implements Constants{
         new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                String hostIP = ((TextView) view).getText().toString();
-//                connectToRoom(roomId, false, false, false, 0);
-                Log.i(TAG, "Connecting to: " + hostIP);
+                String hostID = ((TextView) view).getText().toString();
+                hostEditText.setText(hostID);
             }
       };
 
     public final OnClickListener addFavoriteListener = new OnClickListener() {
         @Override
         public void onClick(View v) {
-            String hostIPAddr = hostEditText.getText().toString();
-            Log.d(TAG, "host ip is: " + hostIPAddr);
-            if (hostIPAddr.length() > 0 && !hostList.contains(hostIPAddr)) {
-                adapter.add(hostIPAddr);
+            String hostID = hostEditText.getText().toString();
+            Log.d(TAG, "host ip is: " + hostID);
+            if (hostID.length() > 0 && !hostList.contains(hostID)) {
+                adapter.add(hostID);
                 adapter.notifyDataSetChanged();
             }
         }
     };
-//
-//  private final OnClickListener addFavoriteListener1 = new OnClickListener() {
-//    @Override
-//    public void onClick(View view) {
-//      String newRoom = roomEditText.getText().toString();
-//      if (newRoom.length() > 0 && !roomList.contains(newRoom)) {
-//        adapter.add(newRoom);
-//        adapter.notifyDataSetChanged();
-//      }
-//    }
-//  };
+
+    private void connectToHost(String hostID) {
+        startDaemonService();
+        Intent intent = new Intent(MainActivity.this, TouchScreenActivity.class);
+        intent.putExtra(TouchScreenActivity.EXTRA_HOSTID, hostID);
+        startActivity(intent);
+    }
 
     public void startDaemonService() {
         if(SessionService.getState() == StateMachine.STATE.NEW) {
-            Intent intent = new Intent(MainActivity.this, SessionService.class).putExtra("connectionID", 0);
+            Intent intent = new Intent(this, SessionService.class).putExtra("connectionID", 0);
             startService(intent);
         }
     }
@@ -157,10 +147,25 @@ public class MainActivity extends AppCompatActivity implements Constants{
         }
     }
 
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        if (item.getItemId() == REMOVE_FAVORITE_INDEX) {
+            AdapterView.AdapterContextMenuInfo info =
+                    (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+            hostList.remove(info.position);
+            adapter.notifyDataSetChanged();
+            return true;
+        }
+        return super.onContextItemSelected(item);
+    }
+
+
+
     @Override
     public void onDestroy() {
         Log.i(TAG, "onDestroy");
-
+        stopConnection();
         super.onDestroy();
     }
 
@@ -172,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements Constants{
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString(keyprefHost, host);
         editor.putString(keyprefHostList, hostListJson);
-        editor.commit();
+        editor.apply();
     }
 
     @Override
@@ -199,6 +204,4 @@ public class MainActivity extends AppCompatActivity implements Constants{
             hostListView.setItemChecked(0, true);
         }
     }
-
-
 }

@@ -13,13 +13,15 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import edu.wing.yytang.apprtc.AppRTCClient;
 import edu.wing.yytang.client.RotationHandler;
 import edu.wing.yytang.client.TouchHandler;
 import edu.wing.yytang.common.Constants;
 import edu.wing.yytang.common.StateMachine;
 import edu.wing.yytang.common.StateObserver;
-import edu.wing.yytang.common.Utility;
 import edu.wing.yytang.performance.PerformanceAdapter;
 import edu.wing.yytang.protocol.SVMPProtocol;
 import edu.wing.yytang.services.SessionService;
@@ -31,6 +33,8 @@ import edu.wing.yytang.services.SessionService;
 public final class TouchScreenActivity extends AppCompatActivity implements StateObserver, Constants{
 
     private final String TAG = TouchScreenActivity.class.getName();
+    public static final String EXTRA_HOSTID = "edu.wing.yytang.apprtc.HOSTID";
+
     protected AppRTCClient appRtcClient;
     private boolean bound = false;
 
@@ -41,11 +45,54 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
     private TouchScreenView tsView = null;
     private Toast logToast;
     private BroadcastReceiver receiver;
+    private String hostIP;
+    private int hostPort;
+
+    // Regex pattern used for checking if room id looks like an IP.
+    static final Pattern IP_PATTERN = Pattern.compile("("
+        // IPv4
+        + "((\\d+\\.){3}\\d+)|"
+        // IPv6
+        + "\\[((([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?::"
+        + "(([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?)\\]|"
+        + "\\[(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})\\]|"
+        // IPv6 without []
+        + "((([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4})?)|"
+        + "(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})|"
+        // Literals
+        + "localhost"
+        + ")"
+        // Optional port number
+        + "(:(\\d+))?");
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        final Intent intent = getIntent();
+        // Get Intent parameters.
+        String hostId = intent.getStringExtra(EXTRA_HOSTID);
+
+        Matcher matcher = IP_PATTERN.matcher(hostId);
+        if (!matcher.matches()) {
+            Log.i(TAG, "roomId must match IP_PATTERN for DirectRTCClient.");
+            return;
+        }
+
+        hostIP = matcher.group(1);
+        String portStr = matcher.group(matcher.groupCount());
+
+        if (portStr != null) {
+            try {
+                hostPort = Integer.parseInt(portStr);
+            } catch (NumberFormatException e) {
+                Log.i(TAG, "Invalid port number: " + portStr);
+                return;
+            }
+        } else {
+            hostPort = DEFAULT_PORT;
+        }
 
         spi = new PerformanceAdapter();
         Point displaySize = new Point();
@@ -64,7 +111,6 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
                 }
             }
         };
-
         setContentView(tsView);
         connectToRoom();
     }
@@ -84,7 +130,7 @@ public final class TouchScreenActivity extends AppCompatActivity implements Stat
             bound = true;
 
             // after we have bound to the service, begin the connection
-            appRtcClient.connectToRoom(TouchScreenActivity.this);
+            appRtcClient.connectToHost(TouchScreenActivity.this, hostIP, hostPort);
         }
 
         @Override

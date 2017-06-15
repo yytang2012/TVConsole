@@ -48,16 +48,15 @@ public class AppRTCClient extends Binder implements Constants {
     }
 
     // called from activity
-    public void connectToRoom(final TouchScreenActivity activity) {
+    public void connectToHost(final TouchScreenActivity activity, final String hostIP, final int hostPort) {
         this.activity = activity;
         machine.addObserver(activity);
-
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    mSocket = new Socket(ipAddr, PROXY_PORT);
+                    mSocket = new Socket(hostIP, hostPort);
                     in = mSocket.getInputStream();
                     out = mSocket.getOutputStream();
                     proxying = true;
